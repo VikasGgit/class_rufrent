@@ -9,23 +9,7 @@ class PaymentService {
       this.dbService = new DatabaseService();
       this.razorpay = razorpay;
     }
-  
-    async createOrder({ amount, currency, receipt }) {
-      const options = {
-        amount: amount * 100, // Razorpay expects amount in paisa
-        currency,
-        receipt,
-      };
-  
-      try {
-        const order = await this.razorpay.orders.create(options);
-        return order;
-      } catch (error) {
-        console.error(error);
-        throw new Error(error.message, "from service");
-      }
-    }
-
+    
     async createOrder({ amount, currency, receipt }) {
       try {
           const options = {
@@ -52,9 +36,6 @@ class PaymentService {
 
         console.log("Saving payment details before verification", paymentData);
 
-      
-        
-
         // Define table and field names for SQL insertion
         const tableName = "dy_payments_info"; // Change this to your actual table name
         const fieldNames = "user_id, property_id, payment_id, order_id, amount, currency, status, payment_data, created_at";
@@ -63,7 +44,7 @@ class PaymentService {
             property_id,
             razorpay_payment_id,
             razorpay_order_id,
-            paymentData.amount,
+            Number((Number(paymentData.amount) / 100).toFixed(2)),
             paymentData.currency,
             paymentData.status,
             JSON.stringify(paymentData), // Store JSON as a string
@@ -93,5 +74,5 @@ class PaymentService {
 }
 
   }
-  
+
   module.exports = PaymentService;
