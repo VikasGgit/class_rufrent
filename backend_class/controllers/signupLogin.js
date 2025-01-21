@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
+const admin = require('firebase-admin');
 const dotenv = require('dotenv');
 const DatabaseService = require('../utils/service'); // Correct import path
 
@@ -12,7 +13,6 @@ class AuthController {
     this.jwtSecret = process.env.JWT_SECRET;
     this.jwtExpiresIn = process.env.JWT_EXPIRES_IN;
     this.dbService = new DatabaseService(); // Create an instance of DatabaseService
-
   }
 
   /**
@@ -118,6 +118,73 @@ class AuthController {
       res.status(500).json({ message: 'Internal server error.' });
     }
   }
+
+
+
+
+  
+  
+  async googleLogin(req, res) {
+    const { email, displayName, uid, mobile_no, role_id} = req.body;
+    console.log('google login', req.body);
+    if (!uid || !mobile_no || !role_id ||!email) {
+      return res.status(400).json({ message: 'Required fields are missing.' });
+    }
+  
+    try {
+     
+  
+      if (!email) {
+        return res.status(400).json({ message: 'Invalid Firebase token.' });
+      }
+  
+      // **Check if user exists in the database**
+      const email_id=email;
+      const existingUser = await this.dbService.getRecordsByFields(
+        'dy_user',
+        '*',
+        `email_id = ${db.escape(email_id)}`
+      );
+  console.log('existingUser', existingUser);  
+      let user;
+      if (existingUser && existingUser.length > 0) {
+        user = existingUser[0]; // User already exists
+      } else {
+        // **Insert new user**
+        const fieldNames = 'auth0id, user_name, email_id, mobile_no, role_id';
+        
+        const fieldValues = `${db.escape(uid)}, ${db.escape(displayName)}, ${db.escape(email)}, ${db.escape(mobile_no)}, ${db.escape(role_id)}`;
+  
+        const insertId = await this.dbService.addNewRecord('dy_user', fieldNames, fieldValues);
+  
+        // **Fetch newly inserted user**
+        const newUser = await this.dbService.getRecordsByFields(
+          'dy_user',
+          '*',
+          `id = ${insertId}`
+        );
+        user = newUser[0];
+      }
+  
+      // **Generate JWT Token**
+      const token = jwt.sign(
+        { id: user.id, email: user.email_id },
+        'your_jwt_secret', // Use your secret here
+        { expiresIn: '1h' } // Set the expiration time of the token
+      );
+  
+      res.status(200).json({
+        message: 'Google login successful.',
+        token,
+        id: user.id,
+        userName: user.user_name,
+      });
+    } catch (err) {
+      console.error('Error during Google login:', err.message);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  }
+  
   
 }
 

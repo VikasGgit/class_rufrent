@@ -1,21 +1,85 @@
 // services/paymentService.js
 const BaseController = require("../utils/baseClass");
 
+
 class PaymentService extends BaseController {
     constructor() {
         super(); // Call constructor of the BaseController to initialize services
     }
 
-    // Method to create an order on Razorpay
-    async createOrder({ amount, currency, receipt }) {
+    // // Method to create an order on Razorpay
+    // async createOrder({ amount, currency, receipt , user_id }) {
+    //     try {
+    //         const options = {
+    //             amount: Math.round(amount * 100), // Convert to paisa (integer value)
+    //             currency,
+    //             receipt,
+    //         };
+
+    //         const order = await this.razorpay.orders.create(options);
+    //         const tableName = "dy_orders_history"; // Change this to your actual table name
+            
+           
+    //         const fieldNames = "order_id, user_id, amount, time";
+
+    //       const date=  new Date((order.created_at + 19800) * 1000)
+    //         .toISOString()
+    //         .slice(0, 19)
+    //         .replace("T", " ")
+    //     const insertValues = `1, ${user_id}, ${order.amount},${date} `; // Convert array to comma-separated string
+    //     // console.log("6", insertFields, insertValues);
+            
+          
+    //         // const fieldValues = [
+    //         //     order.id,
+    //         //     user_id,
+    //         //     Number((Number(order.amount) / 100).toFixed(2)) 
+        
+    //         // ];
+    //         // const insertValues = fieldValues.map(value => 
+    //         //   typeof value === "string" ? `'${value.replace(/'/g, "\\'")}'` : value
+    //         // ).join(", ");
+    
+    //         // Save payment details using stored procedure
+    //         console.log("fieldName", fieldNames);
+    //         console.log("inserted values", insertValues);
+    //         await this.dbService.addNewRecord(tableName, fieldNames, insertValues);
+    
+    //         console.log("Order created in PaymentService", order);
+    //         return order;
+    //     } catch (error) {
+    //         console.error("Error in PaymentService.createOrder:", error);
+    //         throw new Error(error.message);
+    //     }
+    // }
+
+    async createOrder({ amount, currency, receipt, user_id }) {
         try {
             const options = {
                 amount: Math.round(amount * 100), // Convert to paisa (integer value)
                 currency,
                 receipt,
             };
-
+    
             const order = await this.razorpay.orders.create(options);
+            const tableName = "dy_orders_history"; // Change this to your actual table name
+    
+            const fieldNames = "order_id, user_id, amount, time";
+            const id=order.id;
+            console.log("id", id);
+            const date = new Date((order.created_at + 19800) * 1000)
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " "); // Format as 'YYYY-MM-DD HH:MM:SS'
+            const amt=Number((Number(order.amount) / 100).toFixed(2))
+            // Correct SQL insert format
+            const insertValues = `'${order.id}', ${user_id}, ${amt}, '${date}'`; 
+        
+            console.log("fieldNames", fieldNames);
+            console.log("inserted values", insertValues);
+    
+            await this.dbService.addNewRecord(tableName, fieldNames, insertValues);
+    
             console.log("Order created in PaymentService", order);
             return order;
         } catch (error) {
@@ -23,6 +87,10 @@ class PaymentService extends BaseController {
             throw new Error(error.message);
         }
     }
+    
+
+  
+      
 
     // Method to verify the payment status
     async verifyPayment({ razorpay_payment_id, razorpay_order_id, user_id, property_id }) {

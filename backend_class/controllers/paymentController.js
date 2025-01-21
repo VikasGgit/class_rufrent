@@ -10,10 +10,11 @@ class PaymentController {
     // Create Order Endpoint
     async createOrder(req, res) {
         try {
-            const { amount, currency } = req.body;
+            console.log(req.body);
+            const { amount, currency, user_id } = req.body;
             const receipt = "receipt_" + new Date().getTime();
             // Call PaymentService to create an order
-            const order = await this.paymentService.createOrder({ amount, currency, receipt });
+            const order = await this.paymentService.createOrder({ amount, currency, receipt , user_id});
             
             // Send response back with the order details
             return res.status(200).json({
