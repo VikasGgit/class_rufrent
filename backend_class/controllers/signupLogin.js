@@ -21,15 +21,15 @@ class AuthController {
    * @param {Object} res - Express response object used to send the response.
    * @returns {Promise<void>}
    */
+
   async signup(req, res) {
-    const { user_name, email_id, passwd } = req.body;
+    const { user_name, email_id, passwd, mobile_no, role_id } = req.body;
   
-    if (!user_name || !email_id || !passwd) {
+    if (!user_name || !email_id || !passwd || !mobile_no || !role_id) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
   
     try {
-      // Check if the user already exists
       const results = await this.dbService.getRecordsByFields(
         'dy_user',
         '*',
@@ -40,15 +40,37 @@ class AuthController {
         return res.status(409).json({ message: 'User already exists. Please login.' });
       }
   
-      // Hash the password
       const hashedPassword = await bcrypt.hash(passwd, this.saltRounds);
   
-      // Insert the new user
-      const fieldNames = 'user_name, email_id, passwd';
-      const fieldValues = `${db.escape(user_name)}, ${db.escape(email_id)}, ${db.escape(hashedPassword)}`;
-      await this.dbService.addNewRecord('dy_user', fieldNames, fieldValues);
-  
-      res.status(201).json({ message: 'User created successfully.' });
+      const fieldNames = 'user_name, email_id, passwd, mobile_no, role_id';
+      const fieldValues = `${db.escape(user_name)}, ${db.escape(email_id)}, ${db.escape(hashedPassword)}, ${db.escape(mobile_no)}, ${db.escape(role_id)}`;
+      const insertId = await this.dbService.addNewRecord('dy_user', fieldNames, fieldValues);
+
+      const newUser = await this.dbService.getRecordsByFields(
+        'dy_user',
+        '*',
+        `id = ${insertId}`
+      );
+      
+      if (!newUser || newUser.length === 0) {
+        return res.status(500).json({ message: 'Error retrieving user after signup.' });
+      }
+
+      const user = newUser[0];
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email_id },
+        this.jwtSecret,
+        { expiresIn: this.jwtExpiresIn }
+      );
+
+      res.status(201).json({
+        message: 'User created successfully.',
+        token,
+        id: user.id,
+        userName: user.user_name,
+        role_id: user.role_id
+      });
     } catch (err) {
       console.error('Error during signup:', err.message);
       res.status(500).json({ message: 'Internal server error.' });
@@ -127,7 +149,7 @@ class AuthController {
   async googleLogin(req, res) {
     const { email, displayName, uid, mobile_no, role_id} = req.body;
     console.log('google login', req.body);
-    if (!uid || !mobile_no || !role_id ||!email) {
+    if (!uid || !email) {
       return res.status(400).json({ message: 'Required fields are missing.' });
     }
   
@@ -169,23 +191,30 @@ class AuthController {
       // **Generate JWT Token**
       const token = jwt.sign(
         { id: user.id, email: user.email_id },
-        'your_jwt_secret', // Use your secret here
-        { expiresIn: '1h' } // Set the expiration time of the token
+        this.jwtSecret,
+        { expiresIn: this.jwtExpiresIn }
       );
+
+      const roleResults = await this.dbService.getRecordsByFields(
+        'st_role',
+        'role',
+        `id = ${db.escape(user.role_id)}`
+      );
+      const role = roleResults && roleResults.length > 0 ? roleResults[0].role : null;
+  
   
       res.status(200).json({
         message: 'Google login successful.',
         token,
         id: user.id,
         userName: user.user_name,
+        role
       });
     } catch (err) {
       console.error('Error during Google login:', err.message);
       res.status(500).json({ message: 'Internal server error.' });
     }
-  }
-  
-  
+  } 
 }
 
 module.exports = AuthController;
