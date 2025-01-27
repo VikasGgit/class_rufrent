@@ -74,7 +74,7 @@ class AuthController {
   }
 
   async g_login(req, res) {
-  const { uid, email, displayName, token, role_id } = req.body;
+  const { uid, email, displayName, mobile_no, token, role_id } = req.body;
 
   // Check if required fields are provided
   if (!uid || !email || !token) {
@@ -117,7 +117,7 @@ class AuthController {
 
     // Prepare and add the new user to the database
     const fieldNames = "uid, user_name, email_id, mobile_no, role_id";
-    const fieldValues = `${db.escape(uid)}, ${db.escape(displayName || null)}, ${db.escape(email)}, NULL, ${db.escape(assignedRoleId)}`;
+    const fieldValues = `${db.escape(uid)}, ${db.escape(displayName || null)}, ${db.escape(email)}, ${db.escape(mobile_no)}, ${db.escape(assignedRoleId)}`;
     const result = await this.dbService.addNewRecord("dy_user", fieldNames, fieldValues);
 
     // Set custom claims for the user in Firebase
