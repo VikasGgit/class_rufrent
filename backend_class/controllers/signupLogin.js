@@ -7,8 +7,9 @@ const DatabaseService = require("../utils/service");
 dotenv.config();
 
 admin.initializeApp({
-  credential: admin.credential.cert(require("../config/rufrent-firebase-adminsdk-fbsvc-e2bfac7d52.json")),
+  credential: admin.credential.cert(require('../config/firebase_admin.json')),
 });
+
 
 class AuthController {
   constructor() {
