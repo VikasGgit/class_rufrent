@@ -6,14 +6,13 @@ class DatabaseService {
 
   async addNewRecord(tableName, fieldNames, fieldValues) {
     try {
-      
       // Pass raw values (no parentheses) to the stored procedure
       const [rows] = await db.execute(`CALL addNewRecord(?, ?, ?)`, [
         tableName,
         fieldNames,
         fieldValues,
       ]);
-  
+      console.log(rows);
       return rows[0]; // Return the result
     } catch (error) {
       console.error('Error executing addNewRecord:', error.message);
