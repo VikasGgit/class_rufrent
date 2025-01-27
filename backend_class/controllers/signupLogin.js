@@ -73,6 +73,72 @@ class AuthController {
     }
   }
 
+  async g_login(req, res) {
+  const { uid, email, displayName, token, role_id } = req.body;
+
+  // Check if required fields are provided
+  if (!uid || !email || !token) {
+    return res.status(400).json({ message: "Required fields are missing." });
+  }
+
+  try {
+    // Check if the user exists in the database
+    const existingUser = await this.dbService.getRecordsByFields(
+      "dy_user",
+      "*",
+      `uid = ${db.escape(uid)}`
+    );
+
+    if (existingUser.length > 0) {
+      // User already exists, generate and return token
+      return res.status(200).json({
+        message: "Login successful.",
+        token,
+        uid,
+        role: existingUser[0].role_id, // Assuming `role_id` is stored in the user record
+        email: existingUser[0].email_id,
+      });
+    }
+
+    // If user does not exist, create a new user
+    const assignedRoleId = role_id || 2; // Assign role_id from input or default to 2
+
+    // Fetch the role name based on the assigned role_id from the roles table
+    const roleResults = await this.dbService.getRecordsByFields(
+      "st_role",
+      "role",
+      `id = ${db.escape(assignedRoleId)}`
+    );
+    const roleName = roleResults.length > 0 ? roleResults[0].role : null;
+
+    if (!roleName) {
+      return res.status(400).json({ message: "Invalid role_id. Role not found." });
+    }
+
+    // Prepare and add the new user to the database
+    const fieldNames = "uid, user_name, email_id, mobile_no, role_id";
+    const fieldValues = `${db.escape(uid)}, ${db.escape(displayName || null)}, ${db.escape(email)}, NULL, ${db.escape(assignedRoleId)}`;
+    const result = await this.dbService.addNewRecord("dy_user", fieldNames, fieldValues);
+
+    // Set custom claims for the user in Firebase
+    await admin.auth().setCustomUserClaims(uid, { role: roleName });
+
+    // Respond with success and return the generated token
+    res.status(201).json({
+      message: "User registered and logged in successfully.",
+      token,
+      uid,
+      role: roleName,
+      email,
+    });
+  } catch (err) {
+    console.error("Error during Google login:", err.message);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
+
+
+
   async login(req, res) {
     const { uid, token } = req.body;
     console.log("token and uid", req.body);
