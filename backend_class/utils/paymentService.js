@@ -73,10 +73,12 @@ class PaymentService extends BaseController {
             const insertValues = fieldValues.map(value => 
               typeof value === "string" ? `'${value.replace(/'/g, "\\'")}'` : value
             ).join(", ");
+            
     
             // Save payment details using stored procedure
             await this.dbService.addNewRecord(tableName, fieldNames, insertValues);
     
+
             // Validate payment status and order ID
             if (paymentData.status === "captured" && paymentData.order_id === razorpay_order_id) {
                 return { success: true, message: "Payment verified successfully", paymentData };

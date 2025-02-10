@@ -12,7 +12,7 @@ class DatabaseService {
         fieldNames,
         fieldValues,
       ]);
-      console.log(rows);
+      console.log("from add new record",rows);
       return rows[0]; // Return the result
     } catch (error) {
       console.error('Error executing addNewRecord:', error.message);

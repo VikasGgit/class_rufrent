@@ -2,6 +2,40 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 
+const admin = require("firebase-admin");
+
+// Initialize Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(require("../config/firebase_admin.json")),
+});
+
+const verifyToken = async (req, res, next) => {
+  const idToken = req.headers.authorization?.split(" ")[1]; // Extract token from Bearer header
+
+  if (!idToken) {
+    return res.status(401).json({ message: "Unauthorized: No token provided." });
+  }
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    // Attach user data to request
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email  
+    };
+
+    console.log("Decoded User:", req.user);
+    next();
+  } catch (err) {
+    console.error("Token verification error:", err.message);
+    res.status(401).json({ message: "Unauthorized: Invalid token." });
+  }
+};
+
+
+
+
 // Middleware to authenticate requests using JWT
 const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -37,4 +71,9 @@ const authenticate = (req, res, next) => {
         };
   
 
-module.exports = authenticate;
+
+
+
+      
+
+module.exports = {authenticate, verifyToken};
