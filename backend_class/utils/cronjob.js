@@ -26,13 +26,13 @@ function setupNotificationScheduler(io, onlineUsers) {
                 // Check if it's time to send the next notification based on frequency
                 switch (Frequency.toLowerCase()) {
                     case "daily":
-                        sendNotification = timeDiff >=1 //24 * 60 * 60 * 1000; // 24 hours
+                        sendNotification = timeDiff >=24 * 60 * 60 * 1000; // 24 hours
                         break;
                     case "weekly":
-                        sendNotification = timeDiff >=1 //7 * 24 * 60 * 60 * 1000; // 7 days
+                        sendNotification = timeDiff >=7 * 24 * 60 * 60 * 1000; // 7 days
                         break;
                     case "monthly":
-                        sendNotification = timeDiff >= 1//30 * 24 * 60 * 60 * 1000; // 30 days
+                        sendNotification = timeDiff >= 30 * 24 * 60 * 60 * 1000; // 30 days
                         break;
                     case "1": // One-time notification
                         sendNotification = c_cnt === 0; // Send only if it hasn’t been sent before
