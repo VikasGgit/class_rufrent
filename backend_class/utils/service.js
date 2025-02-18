@@ -87,8 +87,8 @@ class DatabaseService {
   async getJoinedData(mainTable, joinClauses, fields, whereClause = '') {
     
     try {
+    
 
-      // Call the stored procedure `getJoinedData` with the provided parameters.
       const procedureCall = `CALL getJoinedData(?, ?, ?, ?);`;
 
       
